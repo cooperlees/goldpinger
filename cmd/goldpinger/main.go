@@ -226,13 +226,16 @@ func main() {
 
 		server.ConfigureAPI()
 		goldpinger.StartUpdater()
-
-		if goldpinger.GoldpingerConfig.UDPEnabled {
-			go goldpinger.StartUDPListener(goldpinger.GoldpingerConfig.UDPPort)
-		}
 	} else {
-		logger.Info("Running in passive mode - serving /ping, /healthz, /metrics only. No k8s API calls will be made.")
+		logger.Info("Running in passive mode - serving /ping, /healthz, /metrics (+ UDP listener if enabled) only. No k8s API calls will be made.")
 		server.ConfigureAPI()
+	}
+
+	// UDP listener runs regardless of active/passive mode so active peers can
+	// measure UDP connectivity to passive nodes. Passive only disables outbound
+	// pinging and k8s API calls, not responding to inbound probes.
+	if goldpinger.GoldpingerConfig.UDPEnabled {
+		go goldpinger.StartUDPListener(goldpinger.GoldpingerConfig.UDPPort)
 	}
 
 	logger.Info("All good, starting serving the API")
